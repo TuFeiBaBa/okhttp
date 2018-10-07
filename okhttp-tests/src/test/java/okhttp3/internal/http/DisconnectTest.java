@@ -89,6 +89,10 @@ public final class DisconnectTest {
       }
       fail("Expected connection to be closed");
     } catch (IOException expected) {
+      //错误信息：timeout
+      //10秒后，测试才完成。应该是向服务端传输数据时，比如，上传文件，调用disconnect后，
+      //客户端不知道与服务端的连接已断开(这种想法有待商榷)。
+      //客户端还在等待服务器的响应。而okhttp的默认writeTimeout为10_000
     }
 
     connection.disconnect();
@@ -112,6 +116,9 @@ public final class DisconnectTest {
       }
       fail("Expected connection to be closed");
     } catch (IOException expected) {
+      //错误信息：Socket closed
+      //700多毫秒后，测试立刻完成。应该是从服务端读取数据时，
+      //比如下载文件，调用disconnect，会直接关闭socket。
     }
 
     responseBody.close();

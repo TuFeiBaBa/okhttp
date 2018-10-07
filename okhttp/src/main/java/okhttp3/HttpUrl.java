@@ -1364,6 +1364,7 @@ public final class HttpUrl {
             case '@':
               // User info precedes.
               if (!hasPassword) {
+                //如果input中没有':'，返回的值是componentDelimiterOffset
                 int passwordColonOffset = delimiterOffset(
                     input, pos, componentDelimiterOffset, ':');
                 String canonicalUsername = canonicalize(
@@ -1688,6 +1689,9 @@ public final class HttpUrl {
           || codePoint == 0x7f
           || codePoint >= 0x80 && asciiOnly
           || encodeSet.indexOf(codePoint) != -1
+              //&&的优先级高于||，并且是左结合（从左往右）。
+              //A&&B||C&&D  即(A&&B)||(C&&D)。
+              //先算A&&B，如果为true，||的特性，整个表达式为true。如果为false，再算C&&D
           || codePoint == '%' && (!alreadyEncoded || strict && !percentEncoded(input, i, limit))
           || codePoint == '+' && plusIsSpace) {
         // Slow path: the character at i requires encoding!
@@ -1733,8 +1737,16 @@ public final class HttpUrl {
         }
 
         while (!encodedCharBuffer.exhausted()) {
+          /**int c = bs[i] & 0xFF ; // 等同于 unsigned int c = bs[i];
+           *在窄类型向宽类型拓展的时候，为了保证不丢失二进制的存储，即在二进制数据保持一致的时候才会用到。
+           *但对应的十进制数据可能就不一样了，
+           *比如：byte b = -1,& 0xff后，获得的int是255。负数，都是这样。但b为正数时，比如1时，& 0xff，获得的int值仍是原数。
+           *
+           * @see <a href="https://www.cnblogs.com/think-in-java/p/5527389.html">byte为什么要与上0xff？</a>
+           */
           int b = encodedCharBuffer.readByte() & 0xff;
           out.writeByte('%');
+          //1111对应16进制的f。所以0000~1111分别对应16进制的0~f。
           out.writeByte(HEX_DIGITS[(b >> 4) & 0xf]);
           out.writeByte(HEX_DIGITS[b & 0xf]);
         }

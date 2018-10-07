@@ -564,6 +564,7 @@ public final class CacheTest {
       in.readByte();
       fail("Expected an IllegalStateException because the source is closed.");
     } catch (IllegalStateException expected) {
+      //错误信息：closed
     }
 
     assertEquals(1, cache.writeAbortCount());
@@ -618,6 +619,8 @@ public final class CacheTest {
     assertEquals("A", get(server.url("/")).body().string());
     Response response = get(server.url("/"));
     assertEquals("A", response.body().string());
+    assertEquals(200,response.code());
+    //113:响应的使用期超过24小时（有效缓存的设定时间大于24小时的情况下）
     assertEquals("113 HttpURLConnection \"Heuristic expiration\"", response.header("Warning"));
   }
 
@@ -2500,6 +2503,8 @@ public final class CacheTest {
     assertEquals("A-OK", response1.message());
     Response response2 = get(valid);
     assertEquals("A", response2.body().string());
+    //为什么返回的响应码不是304？
+    //应该是碰到了304响应，然后就去请求本地的缓存代理服务器，最后返回了200。
     assertEquals(HttpURLConnection.HTTP_OK, response2.code());
     assertEquals("A-OK", response2.message());
 
@@ -2512,6 +2517,8 @@ public final class CacheTest {
     assertEquals("C", response4.body().string());
     assertEquals(HttpURLConnection.HTTP_OK, response4.code());
     assertEquals("C-OK", response4.message());
+
+    assertEquals(4, server.getRequestCount());
 
     server.takeRequest(); // regular get
     return server.takeRequest(); // conditional get

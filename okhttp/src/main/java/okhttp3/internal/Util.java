@@ -488,6 +488,11 @@ public final class Util {
     return assertionError;
   }
 
+  /**
+   * 解码16进制的数字。
+   * @param c 要解码的char
+   * @return  如果char在特定的范围内，返回相应的10进制数值:0~15。否则，返回-1。
+   */
   public static int decodeHexDigit(char c) {
     if (c >= '0' && c <= '9') return c - '0';
     if (c >= 'a' && c <= 'f') return c - 'a' + 10;
