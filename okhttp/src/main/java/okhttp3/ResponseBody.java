@@ -25,6 +25,7 @@ import javax.annotation.Nullable;
 import okhttp3.internal.Util;
 import okio.Buffer;
 import okio.BufferedSource;
+import okio.ByteString;
 
 import static okhttp3.internal.Util.UTF_8;
 
@@ -48,7 +49,7 @@ import static okhttp3.internal.Util.UTF_8;
  *   <li>Response.body().close()</li>
  *   <li>Response.body().source().close()</li>
  *   <li>Response.body().charStream().close()</li>
- *   <li>Response.body().byteString().close()</li>
+ *   <li>Response.body().byteStream().close()</li>
  *   <li>Response.body().bytes()</li>
  *   <li>Response.body().string()</li>
  * </ul>
@@ -101,7 +102,7 @@ import static okhttp3.internal.Util.UTF_8;
  */
 public abstract class ResponseBody implements Closeable {
   /** Multiple calls to {@link #charStream()} must return the same instance. */
-  private Reader reader;
+  private @Nullable Reader reader;
 
   public abstract @Nullable MediaType contentType();
 
@@ -211,6 +212,12 @@ public abstract class ResponseBody implements Closeable {
   }
 
   /** Returns a new response body that transmits {@code content}. */
+  public static ResponseBody create(@Nullable MediaType contentType, ByteString content) {
+    Buffer buffer = new Buffer().write(content);
+    return create(contentType, content.size(), buffer);
+  }
+
+  /** Returns a new response body that transmits {@code content}. */
   public static ResponseBody create(final @Nullable MediaType contentType,
       final long contentLength, final BufferedSource content) {
     if (content == null) throw new NullPointerException("source == null");
@@ -234,7 +241,7 @@ public abstract class ResponseBody implements Closeable {
     private final Charset charset;
 
     private boolean closed;
-    private Reader delegate;
+    private @Nullable Reader delegate;
 
     BomAwareReader(BufferedSource source, Charset charset) {
       this.source = source;

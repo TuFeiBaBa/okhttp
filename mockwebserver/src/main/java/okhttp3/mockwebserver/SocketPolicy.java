@@ -32,6 +32,11 @@ package okhttp3.mockwebserver;
 public enum SocketPolicy {
 
   /**
+   * Shutdown {@link MockWebServer} after writing response.
+   */
+  SHUTDOWN_SERVER_AFTER_RESPONSE,
+
+  /**
    * Keep the socket open after the response. This is the default HTTP/1.1 behavior.
    */
   KEEP_OPEN,
@@ -88,8 +93,14 @@ public enum SocketPolicy {
   SHUTDOWN_OUTPUT_AT_END,
 
   /**
-   * Don't respond to the request but keep the socket open. For testing read response header timeout
-   * issue.
+   * After accepting the connection and doing TLS (if configured) don't do HTTP/1.1 or HTTP/2
+   * framing. Ignore the socket completely until the server is shut down.
+   */
+  STALL_SOCKET_AT_START,
+
+  /**
+   * Read the request but don't respond to it. Just keep the socket open. For testing read response
+   * header timeout issue.
    */
   NO_RESPONSE,
 
@@ -104,5 +115,11 @@ public enum SocketPolicy {
    * Typically this response is sent when a client makes a request with the header {@code
    * Expect: 100-continue}.
    */
-  EXPECT_CONTINUE
+  EXPECT_CONTINUE,
+
+  /**
+   * Transmit a {@code HTTP/1.1 100 Continue} response before reading the HTTP request body even
+   * if the client does not send the header {@code Expect: 100-continue} in its request.
+   */
+  CONTINUE_ALWAYS
 }
