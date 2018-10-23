@@ -34,6 +34,11 @@ class Note {
      */
 
     /**
+     * {@link okhttp3.internal.cache.InternalCache}
+     * Applications shouldn't implement this: instead use {@link okhttp3.Cache}.
+     */
+
+    /**
      * X.509是密码学里公钥证书的格式标准
      */
 
@@ -42,6 +47,10 @@ class Note {
      * 也不能传null
      * @see OkHttpClient.Builder#protocols(List)
      * @see OkHttpClient.Builder#protocols(List)
+     */
+
+    /**
+     * Authenticator的实现示例：{@link JavaNetAuthenticator}
      */
 
 
@@ -54,5 +63,14 @@ class Note {
     /**
      * 同步请求：{@link RealCall#execute()}
      * 异步请求：{@link RealCall#enqueue(Callback)}
+     */
+
+    /**
+     * okhttp对重定向的处理：{@link okhttp3.internal.http.RetryAndFollowUpInterceptor#followUpRequest(Response, Route)}
+     * 1.如果{@link OkHttpClient.Builder#followRedirects(boolean)}传入fasle，不会进行重定向。
+     * 2.默认不支持跨协议的重定向，比如不在http和https之间进行重定向
+     * 3.非"PROPFIND"请求的重定向，比如POST，都会变成"GET"，丢失请求体
+     *
+     * <a href="https://www.jianshu.com/p/61a60859a317">案例：okhttp post 重定向参数丢失 跨协议重定向</a>
      */
 }

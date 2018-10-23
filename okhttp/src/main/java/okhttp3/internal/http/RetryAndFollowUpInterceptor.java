@@ -114,6 +114,7 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
 
     int followUpCount = 0;
     Response priorResponse = null;
+    //如果需要重定向，会多次执行。
     while (true) {
       if (canceled) {
         streamAllocation.release();
@@ -155,6 +156,7 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
             .build();
       }
 
+      // 如果不需要重定向，那么 followUp 为空，会根据响应码判断
       Request followUp;
       try {
         followUp = followUpRequest(response, streamAllocation.route());
@@ -182,6 +184,8 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
         throw new HttpRetryException("Cannot retry streamed HTTP body", response.code());
       }
 
+      //response 和 followUp 比较是否为同一个连接
+      //若为重定向就销毁旧连接，创建新连接
       if (!sameConnection(response, followUp.url())) {
         streamAllocation.release();
         streamAllocation = new StreamAllocation(client.connectionPool(),

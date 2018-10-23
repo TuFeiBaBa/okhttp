@@ -76,11 +76,13 @@ public final class BridgeInterceptor implements Interceptor {
     // If we add an "Accept-Encoding: gzip" header field we're responsible for also decompressing
     // the transfer stream.
     boolean transparentGzip = false;
+    // 使用 gzip 压缩
     if (userRequest.header("Accept-Encoding") == null && userRequest.header("Range") == null) {
       transparentGzip = true;
       requestBuilder.header("Accept-Encoding", "gzip");
     }
 
+    // 加入以前保存的cookie
     List<Cookie> cookies = cookieJar.loadForRequest(userRequest.url());
     if (!cookies.isEmpty()) {
       requestBuilder.header("Cookie", cookieHeader(cookies));
@@ -92,11 +94,13 @@ public final class BridgeInterceptor implements Interceptor {
 
     Response networkResponse = chain.proceed(requestBuilder.build());
 
+    // 保存networkResponse的cookie
     HttpHeaders.receiveHeaders(cookieJar, userRequest.url(), networkResponse.headers());
 
     Response.Builder responseBuilder = networkResponse.newBuilder()
         .request(userRequest);
 
+    // 如果networkResponse使用gzip并且有响应体的话，给用户友好的response设置响应体
     if (transparentGzip
         && "gzip".equalsIgnoreCase(networkResponse.header("Content-Encoding"))
         && HttpHeaders.hasBody(networkResponse)) {
