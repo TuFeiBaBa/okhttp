@@ -73,4 +73,10 @@ class Note {
      *
      * <a href="https://www.jianshu.com/p/61a60859a317">案例：okhttp post 重定向参数丢失 跨协议重定向</a>
      */
+
+    /**
+     * OkHttp在运行中的异步请求数最多为64{@link Dispatcher#maxRequests}，
+     * 而同一个host 的异步请求数最多为5{@link Dispatcher#maxRequestsPerHost}。
+     * 否则会加入到readyAsyncCalls中。{@link Dispatcher#enqueue(RealCall.AsyncCall)}
+     */
 }

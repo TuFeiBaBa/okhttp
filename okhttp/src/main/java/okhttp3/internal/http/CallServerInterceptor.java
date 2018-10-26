@@ -47,14 +47,17 @@ public final class CallServerInterceptor implements Interceptor {
     long sentRequestMillis = System.currentTimeMillis();
 
     realChain.eventListener().requestHeadersStart(realChain.call());
+    // 整理请求头并写入
     httpCodec.writeRequestHeaders(request);
     realChain.eventListener().requestHeadersEnd(realChain.call(), request);
 
     Response.Builder responseBuilder = null;
+    // 检查是否为有 body 的请求方法
     if (HttpMethod.permitsRequestBody(request.method()) && request.body() != null) {
       // If there's a "Expect: 100-continue" header on the request, wait for a "HTTP/1.1 100
       // Continue" response before transmitting the request body. If we don't get that, return
       // what we did get (such as a 4xx response) without ever transmitting the request body.
+      // 如果有 Expect: 100-continue 在请求头中，那么要等服务器的响应
       if ("100-continue".equalsIgnoreCase(request.header("Expect"))) {
         httpCodec.flushRequest();
         realChain.eventListener().responseHeadersStart(realChain.call());
@@ -65,6 +68,7 @@ public final class CallServerInterceptor implements Interceptor {
         // Write the request body if the "Expect: 100-continue" expectation was met.
         realChain.eventListener().requestBodyStart(realChain.call());
         long contentLength = request.body().contentLength();
+        // 写入请求体
         CountingSink requestBodyOut =
             new CountingSink(httpCodec.createRequestBody(request, contentLength));
         BufferedSink bufferedRequestBody = Okio.buffer(requestBodyOut);
@@ -83,11 +87,13 @@ public final class CallServerInterceptor implements Interceptor {
 
     httpCodec.finishRequest();
 
+    // 得到响应头
     if (responseBuilder == null) {
       realChain.eventListener().responseHeadersStart(realChain.call());
       responseBuilder = httpCodec.readResponseHeaders(false);
     }
 
+    // 构造 response
     Response response = responseBuilder
         .request(request)
         .handshake(streamAllocation.connection().handshake())
@@ -114,22 +120,26 @@ public final class CallServerInterceptor implements Interceptor {
     realChain.eventListener()
             .responseHeadersEnd(realChain.call(), response);
 
+    // 如果为 web socket 且状态码是 101 ，那么 body 为空
     if (forWebSocket && code == 101) {
       // Connection is upgrading, but we need to ensure interceptors see a non-null response body.
       response = response.newBuilder()
           .body(Util.EMPTY_RESPONSE)
           .build();
     } else {
+      // 读取 body
       response = response.newBuilder()
           .body(httpCodec.openResponseBody(response))
           .build();
     }
 
+    // 如果请求头中有 close 那么断开连接
     if ("close".equalsIgnoreCase(response.request().header("Connection"))
         || "close".equalsIgnoreCase(response.header("Connection"))) {
       streamAllocation.noNewStreams();
     }
 
+    // 抛出协议异常
     if ((code == 204 || code == 205) && response.body().contentLength() > 0) {
       throw new ProtocolException(
           "HTTP " + code + " had non-zero Content-Length: " + response.body().contentLength());
